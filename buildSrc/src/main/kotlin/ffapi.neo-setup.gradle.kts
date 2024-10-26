@@ -48,6 +48,9 @@ tasks {
             exclude()
             rootProject.file("src/main/resources/assets/fabric/icon.png").copyTo(destinationDir.resolve(path))
         }
+        filesMatching("META-INF/neoforge.mods.toml") {
+            expand(mapOf("version" to version))
+        }
     }
 }
 

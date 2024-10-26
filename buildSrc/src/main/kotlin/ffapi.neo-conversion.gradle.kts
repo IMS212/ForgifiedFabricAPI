@@ -182,13 +182,14 @@ abstract class GenerateForgeModMetadata : DefaultTask() {
             val mods = listOf(
                 Mod(
                     modId = normalModid,
-                    version = "\${file.jarVersion}",
-                    displayName = "Forgified " + json.get("name").asString,
+                    version = "\${version}",
+                    displayName = "Forgified " + json.get("name").asString + " (CaffeineMC)",
                     logoFile = json.get("icon")?.asString,
                     authors = (listOf("Sinytra") + (json.getAsJsonArray("authors")?.map { it.asString } ?: emptyList())).joinToString(separator = ", "),
-                    description = json.get("description")?.asString,
+                    description = json.get("description")?.asString + "\\n\\nThis is based on Sinytra's Forgified Fabric API, but is updated to work on newer versions of Minecraft. You can replace this version with the original that can be obtained from here: " +
+                    "https://modrinth.com/mod/forgified-fabric-api",
                     provides = providedMods,
-                    displayURL = "https://github.com/Sinytra/ForgifiedFabricAPI"
+                    displayURL = "https://github.com/IMS212/ForgifiedFabricAPI"
                 )
             )
             val mixins = json.getAsJsonArray("mixins")?.map { 
@@ -211,7 +212,7 @@ abstract class GenerateForgeModMetadata : DefaultTask() {
                 loaderVersion = "[${loaderVersionString.get()},)",
                 license = json.get("license")?.asString ?: "All Rights Reserved",
                 displayTest,
-                issueTrackerURL = "https://github.com/Sinytra/ForgifiedFabricAPI/issues",
+                issueTrackerURL = "https://github.com/CaffeineMC/sodium",
 
                 mods,
                 dependencies = mapOf(normalModid to allDependencies),
