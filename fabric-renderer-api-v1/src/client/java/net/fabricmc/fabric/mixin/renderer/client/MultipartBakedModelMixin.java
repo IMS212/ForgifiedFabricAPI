@@ -44,7 +44,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public class MultipartBakedModelMixin implements FabricBakedModel {
 	@Shadow
 	@Final
-	private List<Pair<Predicate<BlockState>, BakedModel>> selectors;
+	private List<MultiPartBakedModel.Selector> selectors;
 
 	@Shadow
 	@Final
@@ -59,9 +59,9 @@ public class MultipartBakedModelMixin implements FabricBakedModel {
 	}
 
 	@Inject(at = @At("RETURN"), method = "<init>")
-	private void onInit(List<Pair<Predicate<BlockState>, BakedModel>> components, CallbackInfo cb) {
-		for (Pair<Predicate<BlockState>, BakedModel> component : components) {
-			if (!component.getRight().isVanillaAdapter()) {
+	private void onInit(List<MultiPartBakedModel.Selector> components, CallbackInfo cb) {
+		for (MultiPartBakedModel.Selector component : components) {
+			if (!component.model().isVanillaAdapter()) {
 				isVanilla = false;
 				break;
 			}
@@ -76,9 +76,9 @@ public class MultipartBakedModelMixin implements FabricBakedModel {
 			bitSet = new BitSet();
 
 			for (int i = 0; i < this.selectors.size(); i++) {
-				Pair<Predicate<BlockState>, BakedModel> pair = selectors.get(i);
+				MultiPartBakedModel.Selector pair = selectors.get(i);
 
-				if (pair.getLeft().test(state)) {
+				if (pair.condition().test(state)) {
 					bitSet.set(i);
 				}
 			}
@@ -96,7 +96,7 @@ public class MultipartBakedModelMixin implements FabricBakedModel {
 
 		for (int i = 0; i < this.selectors.size(); i++) {
 			if (bitSet.get(i)) {
-				selectors.get(i).getRight().emitBlockQuads(blockView, state, pos, subModelRandomSupplier, context);
+				selectors.get(i).model().emitBlockQuads(blockView, state, pos, subModelRandomSupplier, context);
 			}
 		}
 	}

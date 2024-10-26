@@ -19,29 +19,9 @@ mainSourceSet.apply {
     }
 }
 
-val testmod: SourceSet by sourceSets.creating {
-    compileClasspath += mainSourceSet.compileClasspath
-    runtimeClasspath += mainSourceSet.runtimeClasspath
-
-    java {
-        srcDir("src/testmodClient/java")
-    }
-    resources {
-        srcDir("src/testmodClient/resources")
-    }
-}
-
 dependencies {
     "implementation"("org.sinytra:forgified-fabric-loader:$versionForgifiedFabricLoader")
 
-    "testmodImplementation"(mainSourceSet.output)
-    "testmodImplementation"("org.sinytra:forgified-fabric-loader:$versionForgifiedFabricLoader")
-
-    if (project.name != "fabric-gametest-api-v1") {
-        "testmodImplementation"(project(":fabric-gametest-api-v1", "namedElements"))
-    }
-
-    "testImplementation"(testmod.output)
     "testImplementation"("org.mockito:mockito-core:5.4.0")
     "testImplementation"("org.junit.jupiter:junit-jupiter-api:5.8.1")
     "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine:5.8.1")
@@ -78,27 +58,6 @@ loom.apply {
         configureEach {
             isIdeConfigGenerated = project.rootProject == project
             property("mixin.debug", "true")
-        }
-
-        create("gametest") {
-            server()
-            name = "Testmod Game Test Server"
-            source(testmod)
-
-            // Enable the gametest runner
-            property("neoforge.gameTestServer", "true")
-        }
-
-        create("testmodClient") {
-            client()
-            name = "Testmod Client"
-            source(testmod)
-        }
-
-        create("testmodServer") {
-            server()
-            name = "Testmod Server"
-            source(testmod)
         }
     }
 }

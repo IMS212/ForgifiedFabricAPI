@@ -178,12 +178,6 @@ allprojects {
             loom.mods.register(p.name) {
                 sourceSet(p.sourceSets.main.get())
             }
-    
-            if (p.file("src/testmod").exists() || p.file("src/testmodClient").exists()) {
-                loom.mods.register(p.name + "-testmod") {
-                    sourceSet(p.sourceSets.getByName("testmod"))
-                }
-            }
         }
     }
 
@@ -244,7 +238,6 @@ dependencies {
 			}
 
 			include(api(project(proj.path, "namedElements"))!!)
-			"testmodImplementation"(proj.sourceSets.getByName("testmod").output)
 		}
 	}
 }

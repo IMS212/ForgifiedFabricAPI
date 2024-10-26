@@ -22,8 +22,8 @@ import java.util.function.Supplier;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.model.BakedOverrides;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
@@ -98,8 +98,8 @@ public abstract class ForwardingBakedModel implements BakedModel, WrapperBakedMo
 	}
 
 	@Override
-	public ItemOverrides getOverrides() {
-		return wrapped.getOverrides();
+	public BakedOverrides overrides() {
+		return wrapped.overrides();
 	}
 
 	@Override
@@ -138,12 +138,12 @@ public abstract class ForwardingBakedModel implements BakedModel, WrapperBakedMo
 	}
 
 	@Override
-	public List<RenderType> getRenderTypes(ItemStack itemStack, boolean fabulous) {
-		return wrapped.getRenderTypes(itemStack, fabulous);
+	public List<RenderType> getRenderTypes(ItemStack itemStack) {
+		return wrapped.getRenderTypes(itemStack);
 	}
 
 	@Override
-	public List<BakedModel> getRenderPasses(ItemStack itemStack, boolean fabulous) {
-		return wrapped.getRenderPasses(itemStack, fabulous);
+	public List<BakedModel> getRenderPasses(ItemStack itemStack) {
+		return wrapped.getRenderPasses(itemStack);
 	}
 }

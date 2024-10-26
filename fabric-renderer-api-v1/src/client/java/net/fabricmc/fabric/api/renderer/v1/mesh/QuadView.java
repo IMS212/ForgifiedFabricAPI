@@ -16,6 +16,7 @@
 
 package net.fabricmc.fabric.api.renderer.v1.mesh;
 
+import net.minecraft.client.renderer.LightTexture;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2f;
@@ -198,7 +199,24 @@ public interface QuadView {
 		// Mimic material properties to the largest possible extent
 		int outputColorIndex = material().disableColorIndex() ? -1 : colorIndex();
 		boolean outputShade = !material().disableDiffuse();
-		return new BakedQuad(vertexData, outputColorIndex, lightFace(), sprite, outputShade);
+
+		// The output light emission is equal to the minimum of all four sky light values and all four block light values.
+		int outputLightEmission = 15;
+
+		for (int i = 0; i < 4; i++) {
+			int lightmap = lightmap(i);
+
+			if (lightmap == 0) {
+				outputLightEmission = 0;
+				break;
+			}
+
+			int blockLight = LightTexture.block(lightmap);
+			int skyLight = LightTexture.sky(lightmap);
+			outputLightEmission = Math.min(outputLightEmission, Math.min(blockLight, skyLight));
+		}
+
+		return new BakedQuad(vertexData, outputColorIndex, lightFace(), sprite, outputShade, outputLightEmission);
 	}
 
 	/**

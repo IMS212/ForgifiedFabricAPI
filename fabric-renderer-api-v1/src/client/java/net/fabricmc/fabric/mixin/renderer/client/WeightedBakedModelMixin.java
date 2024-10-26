@@ -19,6 +19,7 @@ package net.fabricmc.fabric.mixin.renderer.client;
 import java.util.List;
 import java.util.function.Supplier;
 
+import net.minecraft.util.random.SimpleWeightedRandomList;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -42,16 +43,13 @@ import net.minecraft.world.level.block.state.BlockState;
 public class WeightedBakedModelMixin implements FabricBakedModel {
 	@Shadow
 	@Final
-	private int totalWeight;
-	@Shadow
-	@Final
-	private List<WeightedEntry.Wrapper<BakedModel>> list;
+	private SimpleWeightedRandomList<BakedModel> list;
 	@Unique
 	boolean isVanilla = true;
 
 	@Inject(at = @At("RETURN"), method = "<init>")
-	private void onInit(List<WeightedEntry.Wrapper<BakedModel>> models, CallbackInfo cb) {
-		for (WeightedEntry.Wrapper<BakedModel> model : models) {
+	private void onInit(SimpleWeightedRandomList<BakedModel> models, CallbackInfo ci) {
+		for (WeightedEntry.Wrapper<BakedModel> model : models.unwrap()) {
 			if (!model.data().isVanillaAdapter()) {
 				isVanilla = false;
 				break;
@@ -66,12 +64,12 @@ public class WeightedBakedModelMixin implements FabricBakedModel {
 
 	@Override
 	public void emitBlockQuads(BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, RenderContext context) {
-		WeightedEntry.Wrapper<BakedModel> selected = WeightedRandom.getWeightedItem(this.list, Math.abs((int) randomSupplier.get().nextLong()) % this.totalWeight).orElse(null);
+		BakedModel selected = this.list.getRandomValue(randomSupplier.get()).orElse(null);
 
 		if (selected != null) {
-			selected.data().emitBlockQuads(blockView, state, pos, () -> {
+			selected.emitBlockQuads(blockView, state, pos, () -> {
 				RandomSource random = randomSupplier.get();
-				random.nextLong(); // Imitate vanilla modifying the random before passing it to the submodel
+				random.nextInt(); // Imitate vanilla modifying the random before passing it to the submodel
 				return random;
 			}, context);
 		}
@@ -79,12 +77,12 @@ public class WeightedBakedModelMixin implements FabricBakedModel {
 
 	@Override
 	public void emitItemQuads(ItemStack stack, Supplier<RandomSource> randomSupplier, RenderContext context) {
-		WeightedEntry.Wrapper<BakedModel> selected = WeightedRandom.getWeightedItem(this.list, Math.abs((int) randomSupplier.get().nextLong()) % this.totalWeight).orElse(null);
+		BakedModel selected = this.list.getRandomValue(randomSupplier.get()).orElse(null);
 
 		if (selected != null) {
-			selected.data().emitItemQuads(stack, () -> {
+			selected.emitItemQuads(stack, () -> {
 				RandomSource random = randomSupplier.get();
-				random.nextLong(); // Imitate vanilla modifying the random before passing it to the submodel
+				random.nextInt(); // Imitate vanilla modifying the random before passing it to the submodel
 				return random;
 			}, context);
 		}

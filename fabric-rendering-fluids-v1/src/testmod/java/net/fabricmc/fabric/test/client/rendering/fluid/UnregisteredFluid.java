@@ -19,6 +19,7 @@ package net.fabricmc.fabric.test.client.rendering.fluid;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.Item;
@@ -58,7 +59,7 @@ public abstract class UnregisteredFluid extends FlowingFluid {
 	}
 
 	@Override
-	protected boolean canConvertToSource(Level world) {
+	protected boolean canConvertToSource(ServerLevel world) {
 		return true;
 	}
 
