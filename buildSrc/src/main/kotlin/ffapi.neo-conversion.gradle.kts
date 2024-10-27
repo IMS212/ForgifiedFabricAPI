@@ -189,7 +189,7 @@ abstract class GenerateForgeModMetadata : DefaultTask() {
                     description = json.get("description")?.asString + "\\n\\nThis is based on Sinytra's Forgified Fabric API, but is updated to work on newer versions of Minecraft. You can replace this version with the original that can be obtained from here: " +
                     "https://modrinth.com/mod/forgified-fabric-api",
                     provides = providedMods,
-                    displayURL = "https://github.com/IMS212/ForgifiedFabricAPI"
+                    displayURL = "https://github.com/CaffeineMC/ForgifiedFabricAPI"
                 )
             )
             val mixins = json.getAsJsonArray("mixins")?.map { 
