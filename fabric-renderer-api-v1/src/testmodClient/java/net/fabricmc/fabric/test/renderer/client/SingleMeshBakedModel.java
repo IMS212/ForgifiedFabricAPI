@@ -18,21 +18,20 @@ package net.fabricmc.fabric.test.renderer.client;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
+import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
 import net.fabricmc.fabric.api.renderer.v1.model.ModelHelper;
-import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -51,13 +50,13 @@ public class SingleMeshBakedModel implements BakedModel {
 	}
 
 	@Override
-	public void emitBlockQuads(BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, RenderContext context) {
-		mesh.outputTo(context.getEmitter());
+	public void emitBlockQuads(QuadEmitter emitter, BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, Predicate<@Nullable Direction> cullTest) {
+		mesh.outputTo(emitter);
 	}
 
 	@Override
-	public void emitItemQuads(ItemStack stack, Supplier<RandomSource> randomSupplier, RenderContext context) {
-		mesh.outputTo(context.getEmitter());
+	public void emitItemQuads(QuadEmitter emitter, Supplier<RandomSource> randomSupplier) {
+		mesh.outputTo(emitter);
 	}
 
 	@Override
@@ -81,11 +80,6 @@ public class SingleMeshBakedModel implements BakedModel {
 	}
 
 	@Override
-	public boolean isCustomRenderer() {
-		return false;
-	}
-
-	@Override
 	public TextureAtlasSprite getParticleIcon() {
 		return particleSprite;
 	}
@@ -93,10 +87,5 @@ public class SingleMeshBakedModel implements BakedModel {
 	@Override
 	public ItemTransforms getTransforms() {
 		return ModelHelper.MODEL_TRANSFORM_BLOCK;
-	}
-
-	@Override
-	public ItemOverrides getOverrides() {
-		return ItemOverrides.EMPTY;
 	}
 }

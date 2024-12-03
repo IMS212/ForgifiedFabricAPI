@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandler;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
@@ -31,7 +30,6 @@ import net.minecraft.client.renderer.block.LiquidBlockRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
@@ -68,10 +66,6 @@ public class FluidRenderHandlerRegistryImpl implements FluidRenderHandlerRegistr
 		return modHandlers.get(fluid);
 	}
 
-	public void registerHandlerOnly(Fluid fluid, FluidRenderHandler renderer) {
-		handlers.put(fluid, renderer);
-	}
-
 	@Override
 	public void register(Fluid fluid, FluidRenderHandler renderer) {
 		handlers.put(fluid, renderer);
@@ -85,15 +79,7 @@ public class FluidRenderHandlerRegistryImpl implements FluidRenderHandlerRegistr
 
 	@Override
 	public boolean isBlockTransparent(Block block) {
-		if (overlayBlocks.containsKey(block)) {
-			return overlayBlocks.get(block);
-		}
-		return block instanceof HalfTransparentBlock || block instanceof LeavesBlock;
-	}
-
-	@Override
-	public boolean isBlockTransparent(BlockState state, BlockAndTintGetter level, BlockPos pos, FluidState fluidState) {
-		return overlayBlocks.computeIfAbsent(state.getBlock(), block -> block.shouldDisplayFluidOverlay(state, level, pos, fluidState));
+		return overlayBlocks.computeIfAbsent(block, k -> k instanceof HalfTransparentBlock || k instanceof LeavesBlock);
 	}
 
 	public void onFluidRendererReload(LiquidBlockRenderer renderer, TextureAtlasSprite[] waterSprites, TextureAtlasSprite[] lavaSprites, TextureAtlasSprite waterOverlay) {
@@ -104,7 +90,7 @@ public class FluidRenderHandlerRegistryImpl implements FluidRenderHandlerRegistr
 
 		TextureAtlas texture = Minecraft.getInstance()
 				.getModelManager()
-				.getAtlas(InventoryMenu.BLOCK_ATLAS);
+				.getAtlas(TextureAtlas.LOCATION_BLOCKS);
 
 		for (FluidRenderHandler handler : handlers.values()) {
 			handler.reloadTextures(texture);

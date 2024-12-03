@@ -16,9 +16,10 @@
 
 package net.fabricmc.fabric.mixin.renderer.client;
 
-import java.util.List;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -26,32 +27,30 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
 import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
-import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.WeightedBakedModel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
+import net.minecraft.util.random.SimpleWeightedRandomList;
 import net.minecraft.util.random.WeightedEntry;
-import net.minecraft.util.random.WeightedRandom;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 
 @Mixin(WeightedBakedModel.class)
-public class WeightedBakedModelMixin implements FabricBakedModel {
+abstract class WeightedBakedModelMixin implements FabricBakedModel {
 	@Shadow
 	@Final
-	private int totalWeight;
-	@Shadow
-	@Final
-	private List<WeightedEntry.Wrapper<BakedModel>> list;
+	private SimpleWeightedRandomList<BakedModel> list;
+
 	@Unique
-	boolean isVanilla = true;
+	private boolean isVanilla = true;
 
 	@Inject(at = @At("RETURN"), method = "<init>")
-	private void onInit(List<WeightedEntry.Wrapper<BakedModel>> models, CallbackInfo cb) {
-		for (WeightedEntry.Wrapper<BakedModel> model : models) {
+	private void onInit(SimpleWeightedRandomList<BakedModel> dataPool, CallbackInfo ci) {
+		for (WeightedEntry.Wrapper<BakedModel> model : list.unwrap()) {
 			if (!model.data().isVanillaAdapter()) {
 				isVanilla = false;
 				break;
@@ -65,28 +64,28 @@ public class WeightedBakedModelMixin implements FabricBakedModel {
 	}
 
 	@Override
-	public void emitBlockQuads(BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, RenderContext context) {
-		WeightedEntry.Wrapper<BakedModel> selected = WeightedRandom.getWeightedItem(this.list, Math.abs((int) randomSupplier.get().nextLong()) % this.totalWeight).orElse(null);
+	public void emitBlockQuads(QuadEmitter emitter, BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, Predicate<@Nullable Direction> cullTest) {
+		BakedModel selected = this.list.getRandomValue(randomSupplier.get()).orElse(null);
 
 		if (selected != null) {
-			selected.data().emitBlockQuads(blockView, state, pos, () -> {
+			selected.emitBlockQuads(emitter, blockView, state, pos, () -> {
 				RandomSource random = randomSupplier.get();
-				random.nextLong(); // Imitate vanilla modifying the random before passing it to the submodel
+				random.nextInt(); // Imitate vanilla modifying the random before passing it to the submodel
 				return random;
-			}, context);
+			}, cullTest);
 		}
 	}
 
 	@Override
-	public void emitItemQuads(ItemStack stack, Supplier<RandomSource> randomSupplier, RenderContext context) {
-		WeightedEntry.Wrapper<BakedModel> selected = WeightedRandom.getWeightedItem(this.list, Math.abs((int) randomSupplier.get().nextLong()) % this.totalWeight).orElse(null);
+	public void emitItemQuads(QuadEmitter emitter, Supplier<RandomSource> randomSupplier) {
+		BakedModel selected = this.list.getRandomValue(randomSupplier.get()).orElse(null);
 
 		if (selected != null) {
-			selected.data().emitItemQuads(stack, () -> {
+			selected.emitItemQuads(emitter, () -> {
 				RandomSource random = randomSupplier.get();
-				random.nextLong(); // Imitate vanilla modifying the random before passing it to the submodel
+				random.nextInt(); // Imitate vanilla modifying the random before passing it to the submodel
 				return random;
-			}, context);
+			});
 		}
 	}
 }

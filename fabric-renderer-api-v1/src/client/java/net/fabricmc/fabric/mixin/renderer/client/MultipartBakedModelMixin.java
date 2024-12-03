@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -30,38 +30,32 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
-import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
+import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.MultiPartBakedModel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 
 @Mixin(MultiPartBakedModel.class)
-public class MultipartBakedModelMixin implements FabricBakedModel {
+abstract class MultipartBakedModelMixin implements BakedModel {
 	@Shadow
 	@Final
-	private List<Pair<Predicate<BlockState>, BakedModel>> selectors;
+	private List<MultiPartBakedModel.Selector> selectors;
 
 	@Shadow
 	@Final
 	private Map<BlockState, BitSet> selectorCache;
 
 	@Unique
-	boolean isVanilla = true;
-
-	@Override
-	public boolean isVanillaAdapter() {
-		return isVanilla;
-	}
+	private boolean isVanilla = true;
 
 	@Inject(at = @At("RETURN"), method = "<init>")
-	private void onInit(List<Pair<Predicate<BlockState>, BakedModel>> components, CallbackInfo cb) {
-		for (Pair<Predicate<BlockState>, BakedModel> component : components) {
-			if (!component.getRight().isVanillaAdapter()) {
+	private void onInit(List<MultiPartBakedModel.Selector> selectors, CallbackInfo ci) {
+		for (MultiPartBakedModel.Selector selector : selectors) {
+			if (!selector.model().isVanillaAdapter()) {
 				isVanilla = false;
 				break;
 			}
@@ -69,16 +63,21 @@ public class MultipartBakedModelMixin implements FabricBakedModel {
 	}
 
 	@Override
-	public void emitBlockQuads(BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, RenderContext context) {
+	public boolean isVanillaAdapter() {
+		return isVanilla;
+	}
+
+	@Override
+	public void emitBlockQuads(QuadEmitter emitter, BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, Predicate<@Nullable Direction> cullTest) {
 		BitSet bitSet = this.selectorCache.get(state);
 
 		if (bitSet == null) {
 			bitSet = new BitSet();
 
 			for (int i = 0; i < this.selectors.size(); i++) {
-				Pair<Predicate<BlockState>, BakedModel> pair = selectors.get(i);
+				MultiPartBakedModel.Selector selector = selectors.get(i);
 
-				if (pair.getLeft().test(state)) {
+				if (selector.condition().test(state)) {
 					bitSet.set(i);
 				}
 			}
@@ -96,13 +95,13 @@ public class MultipartBakedModelMixin implements FabricBakedModel {
 
 		for (int i = 0; i < this.selectors.size(); i++) {
 			if (bitSet.get(i)) {
-				selectors.get(i).getRight().emitBlockQuads(blockView, state, pos, subModelRandomSupplier, context);
+				selectors.get(i).model().emitBlockQuads(emitter, blockView, state, pos, subModelRandomSupplier, cullTest);
 			}
 		}
 	}
 
 	@Override
-	public void emitItemQuads(ItemStack stack, Supplier<RandomSource> randomSupplier, RenderContext context) {
+	public void emitItemQuads(QuadEmitter emitter, Supplier<RandomSource> randomSupplier) {
 		// Vanilla doesn't use MultipartBakedModel for items.
 	}
 }

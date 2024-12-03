@@ -1,6 +1,6 @@
 import me.modmuss50.mpp.ReleaseType
-import net.fabricmc.loom.build.nesting.IncludedJarFactory
 import net.fabricmc.loom.build.nesting.JarNester
+import net.fabricmc.loom.build.nesting.NestableJarGenerationTask
 import net.fabricmc.loom.util.Constants
 import org.apache.commons.codec.digest.DigestUtils
 import org.eclipse.jgit.api.Git
@@ -134,18 +134,7 @@ dependencies {
 tasks {
     named<Jar>("jar") {
         doLast {
-            val factory = IncludedJarFactory(project)
-            val config = configurations.getByName(Constants.Configurations.INCLUDE)
-            val nestedJars = factory.getNestedJars(config)
-            val forgeNestedJars = factory.getForgeNestedJars(config)
 
-            JarNester.nestJars(
-                nestedJars.get().files,
-                forgeNestedJars.get().left.map { it.resolve() },
-                archiveFile.get().asFile,
-                loom.platform.get(),
-                project.logger
-            )
         }
     }
 

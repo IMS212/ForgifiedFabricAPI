@@ -22,7 +22,7 @@ import net.fabricmc.fabric.api.blockview.v2.FabricBlockView;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockAndTintGetter;
@@ -41,10 +41,8 @@ public class FrameBlock extends Block implements EntityBlock, FabricBlock {
 	}
 
 	@Override
-	public ItemInteractionResult useItemOn(ItemStack stack, BlockState blockState, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult blockHitResult) {
+	public InteractionResult useItemOn(ItemStack stack, BlockState blockState, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult blockHitResult) {
 		if (world.getBlockEntity(pos) instanceof FrameBlockEntity frame) {
-			Block handBlock = Block.byItem(stack.getItem());
-
 			@Nullable
 			Block currentBlock = frame.getBlock();
 
@@ -56,25 +54,31 @@ public class FrameBlock extends Block implements EntityBlock, FabricBlock {
 						frame.setBlock(null);
 					}
 
-					return ItemInteractionResult.sidedSuccess(world.isClientSide());
+					return InteractionResult.SUCCESS;
+				} else {
+					return InteractionResult.PASS;
 				}
-
-				return ItemInteractionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
 			}
+
+			Block handBlock = Block.byItem(stack.getItem());
 
 			// getBlockFromItem will return air if we do not have a block item in hand
 			if (handBlock == Blocks.AIR) {
-				return ItemInteractionResult.FAIL;
+				return InteractionResult.PASS;
 			}
 
 			// Do not allow blocks that may have a block entity
 			if (handBlock instanceof EntityBlock) {
-				return ItemInteractionResult.FAIL;
+				return InteractionResult.PASS;
 			}
 
-			stack.shrink(1);
+			if (currentBlock == handBlock) {
+				return InteractionResult.PASS;
+			}
 
 			if (!world.isClientSide()) {
+				stack.consume(1, player);
+
 				if (currentBlock != null) {
 					player.getInventory().placeItemBackInInventory(new ItemStack(currentBlock));
 				}
@@ -82,10 +86,10 @@ public class FrameBlock extends Block implements EntityBlock, FabricBlock {
 				frame.setBlock(handBlock);
 			}
 
-			return ItemInteractionResult.sidedSuccess(world.isClientSide());
+			return InteractionResult.SUCCESS;
 		}
 
-		return ItemInteractionResult.FAIL;
+		return InteractionResult.TRY_WITH_EMPTY_HAND;
 	}
 
 	@Nullable

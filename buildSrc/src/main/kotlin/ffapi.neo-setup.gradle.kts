@@ -37,9 +37,6 @@ dependencies {
     "testmodImplementation"(mainSourceSet.output)
     "testmodImplementation"("org.sinytra:forgified-fabric-loader:$versionForgifiedFabricLoader")
 
-    if (project.name != "fabric-gametest-api-v1") {
-        "testmodImplementation"(project(":fabric-gametest-api-v1", "namedElements"))
-    }
 
     "testImplementation"(testmod.output)
     "testImplementation"("org.mockito:mockito-core:5.4.0")

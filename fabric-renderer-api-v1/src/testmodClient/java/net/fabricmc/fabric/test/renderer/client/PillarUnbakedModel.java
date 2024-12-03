@@ -16,44 +16,34 @@
 
 package net.fabricmc.fabric.test.renderer.client;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Stream;
-
-import org.jetbrains.annotations.Nullable;
 import net.fabricmc.fabric.test.renderer.RendererTest;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.block.model.TextureSlots;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.client.resources.model.ModelBaker;
 import net.minecraft.client.resources.model.ModelState;
 import net.minecraft.client.resources.model.UnbakedModel;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.InventoryMenu;
 
 public class PillarUnbakedModel implements UnbakedModel {
 	private static final List<Material> SPRITES = Stream.of("alone", "bottom", "middle", "top")
-			.map(suffix -> new Material(InventoryMenu.BLOCK_ATLAS, RendererTest.id("block/pillar_" + suffix)))
+			.map(suffix -> new Material(TextureAtlas.LOCATION_BLOCKS, RendererTest.id("block/pillar_" + suffix)))
 			.toList();
 
 	@Override
-	public Collection<ResourceLocation> getDependencies() {
-		return Collections.emptySet();
+	public void resolveDependencies(Resolver resolver) {
 	}
 
 	@Override
-	public void resolveParents(Function<ResourceLocation, UnbakedModel> modelLoader) {
-	}
-
-	@Nullable
-	@Override
-	public BakedModel bake(ModelBaker baker, Function<Material, TextureAtlasSprite> textureGetter, ModelState rotationContainer) {
+	public BakedModel bake(TextureSlots textures, ModelBaker baker, ModelState settings, boolean ambientOcclusion, boolean isSideLit, ItemTransforms transformation) {
 		TextureAtlasSprite[] sprites = new TextureAtlasSprite[SPRITES.size()];
 
 		for (int i = 0; i < sprites.length; ++i) {
-			sprites[i] = textureGetter.apply(SPRITES.get(i));
+			sprites[i] = baker.sprites().get(SPRITES.get(i));
 		}
 
 		return new PillarBakedModel(sprites);

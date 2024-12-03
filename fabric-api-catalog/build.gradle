@@ -5,9 +5,6 @@ plugins {
 version = rootProject.version
 
 publishing.publications {
-	register('mavenJava', MavenPublication) {
-		from components.versionCatalog
-	}
 }
 
 tasks.withType(GenerateModuleMetadata) {

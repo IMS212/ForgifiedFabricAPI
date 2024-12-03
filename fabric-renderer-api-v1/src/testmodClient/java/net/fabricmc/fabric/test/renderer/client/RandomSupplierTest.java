@@ -17,14 +17,13 @@
 package net.fabricmc.fabric.test.renderer.client;
 
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.Nullable;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
+import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
@@ -33,8 +32,9 @@ import net.minecraft.client.resources.model.WeightedBakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
-import net.minecraft.util.random.WeightedEntry;
+import net.minecraft.util.random.SimpleWeightedRandomList;
 import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.EmptyBlockAndTintGetter;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -49,16 +49,7 @@ public class RandomSupplierTest implements ClientModInitializer {
 
 	@Override
 	public void onInitializeClient() {
-		var checkingModel = new RandomCheckingBakedModel();
-		var weighted = new WeightedBakedModel(List.of(
-				WeightedEntry.wrap(checkingModel, 1),
-				WeightedEntry.wrap(checkingModel, 2)));
-		var multipart = new MultiPartBakedModel(List.of(
-				Pair.of(state -> true, weighted),
-				Pair.of(state -> true, weighted)));
-		var weightedAgain = new WeightedBakedModel(List.of(
-				WeightedEntry.wrap(multipart, 1),
-				WeightedEntry.wrap(multipart, 2)));
+		WeightedBakedModel weightedAgain = createWeightedBakedModel();
 
 		long startingSeed = 42;
 		RandomSource random = RandomSource.create();
@@ -73,7 +64,26 @@ public class RandomSupplierTest implements ClientModInitializer {
 			random.setSeed(startingSeed);
 			return random;
 		};
-		weightedAgain.emitBlockQuads(null, Blocks.STONE.defaultBlockState(), BlockPos.ZERO, randomSupplier, null);
+		weightedAgain.emitBlockQuads(null, EmptyBlockAndTintGetter.INSTANCE, Blocks.STONE.defaultBlockState(), BlockPos.ZERO, randomSupplier, cullFace -> false);
+	}
+
+	private static WeightedBakedModel createWeightedBakedModel() {
+		var checkingModel = new RandomCheckingBakedModel();
+
+		SimpleWeightedRandomList.Builder<BakedModel> weightedBuilder = SimpleWeightedRandomList.builder();
+		weightedBuilder.add(checkingModel, 1);
+		weightedBuilder.add(checkingModel, 2);
+
+		var weighted = new WeightedBakedModel(weightedBuilder.build());
+		var multipart = new MultiPartBakedModel(List.of(
+				new MultiPartBakedModel.Selector(state -> true, weighted),
+				new MultiPartBakedModel.Selector(state -> true, weighted)));
+
+		SimpleWeightedRandomList.Builder<BakedModel> weightedAgainBuilder = SimpleWeightedRandomList.builder();
+		weightedAgainBuilder.add(multipart, 1);
+		weightedAgainBuilder.add(multipart, 2);
+
+		return new WeightedBakedModel(weightedAgainBuilder.build());
 	}
 
 	private static class RandomCheckingBakedModel implements BakedModel {
@@ -94,7 +104,7 @@ public class RandomSupplierTest implements ClientModInitializer {
 		}
 
 		@Override
-		public void emitBlockQuads(BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, RenderContext context) {
+		public void emitBlockQuads(QuadEmitter emitter, BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, Predicate<@Nullable Direction> cullTest) {
 			getQuads(state, null, randomSupplier.get());
 		}
 
@@ -114,22 +124,12 @@ public class RandomSupplierTest implements ClientModInitializer {
 		}
 
 		@Override
-		public boolean isCustomRenderer() {
-			return false;
-		}
-
-		@Override
 		public TextureAtlasSprite getParticleIcon() {
 			return null;
 		}
 
 		@Override
 		public ItemTransforms getTransforms() {
-			return null;
-		}
-
-		@Override
-		public ItemOverrides getOverrides() {
 			return null;
 		}
 	}
